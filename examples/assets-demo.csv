@@ -1,0 +1,3 @@
+equipment_type;model;inventory_number;serial_number;received_date;current_holder;price_rub;vat_mode;vat_rate;vat_rub
+Ноутбук;Вымышленная модель А;DEMO-IMPORT-001;DEMO-IMP-SN-001;2026-09-01;Склад;27600.00;included;22;4977.05
+Монитор;Вымышленная модель Б;DEMO-IMPORT-002;DEMO-IMP-SN-002;2026-09-02;Склад;18000.00;none;;0.00

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="csrf-token" content="{{.CSRFToken}}">
+  <title>Акт выдачи оборудования</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<div id="equipment-act-concept">
+  <header class="ea-top"><span class="ea-brand">Учёт оборудования</span><span class="ea-context">Формирование акта</span></header>
+  <main class="ea-main">
+    <h1>Новый акт выдачи</h1>
+    <noscript><p class="ea-error">Для поиска оборудования и составления акта включите JavaScript.</p></noscript>
+    <section class="ea-panel" aria-label="Данные документа">
+      <div class="ea-grid ea-document-fields">
+        <div class="ea-field"><label for="ea-number">Номер акта</label><input id="ea-number" maxlength="100" placeholder="Введите номер"></div>
+        <div class="ea-field"><label for="ea-date">Дата акта</label><input id="ea-date" type="date" value="{{.Today}}"></div>
+        <div class="ea-field ea-recipient"><label for="ea-recipient">Кому передаём</label><input id="ea-recipient" maxlength="500" placeholder="ФИО получателя" autocomplete="off"></div>
+      </div>
+    </section>
+    <section class="ea-panel" aria-labelledby="ea-equipment-heading">
+      <div class="ea-head"><h2 id="ea-equipment-heading">Выбор оборудования</h2><button id="ea-open-new" type="button">+ Новое оборудование</button></div>
+      <div id="ea-picker">
+        <div class="ea-search-row">
+          <div class="ea-field"><label for="ea-type-filter">Тип оборудования</label><select id="ea-type-filter"><option value="">Все типы</option></select></div>
+          <div class="ea-field"><label for="ea-search">Поиск по базе</label><input id="ea-search" type="search" maxlength="200" placeholder="Тип, модель, серийный или инвентарный номер" autocomplete="off" aria-controls="ea-results" aria-describedby="ea-search-status"></div>
+        </div>
+        <div id="ea-types-error" class="ea-error" role="status" hidden></div>
+        <p id="ea-search-status" class="ea-status ea-search-status" role="status" aria-live="polite">Введите запрос или выберите тип оборудования.</p>
+        <div id="ea-results" class="ea-results" role="group" aria-label="Результаты поиска" hidden></div>
+        <button id="ea-search-retry" type="button" hidden>Повторить поиск</button>
+        <div id="ea-selection" class="ea-selection" hidden>
+          <dl id="ea-details" class="ea-details"></dl>
+          <div class="ea-actions"><span class="ea-status" id="ea-selection-status" aria-live="polite"></span><button id="ea-add-document" class="ea-primary" type="button">Добавить в акт</button></div>
+        </div>
+      </div>
+      <form id="ea-new-form" hidden>
+        <p class="ea-status ea-form-help">Обязательные поля отмечены звёздочкой. Стоимость и НДС укажите по учётным данным.</p>
+        <fieldset id="ea-new-fields">
+          <legend class="sr-only">Новое оборудование</legend>
+          <div class="ea-grid">
+            <div class="ea-field"><label for="ea-new-type">Тип оборудования *</label><input id="ea-new-type" name="equipment_type" list="ea-type-list" maxlength="200" required placeholder="Например, ноутбук" aria-describedby="ea-error-equipment_type"><datalist id="ea-type-list"></datalist><span id="ea-error-equipment_type" class="ea-field-error"></span></div>
+            <div class="ea-field"><label for="ea-new-model">Модель устройства *</label><input id="ea-new-model" name="model" maxlength="500" required placeholder="Производитель и модель" aria-describedby="ea-error-model"><span id="ea-error-model" class="ea-field-error"></span></div>
+            <div class="ea-field"><label for="ea-new-inventory">Инвентарный номер 1С *</label><input id="ea-new-inventory" name="inventory_number" maxlength="200" required placeholder="Инвентарный номер" aria-describedby="ea-error-inventory_number"><span id="ea-error-inventory_number" class="ea-field-error"></span></div>
+            <div class="ea-field"><label for="ea-new-serial">Серийный номер</label><input id="ea-new-serial" name="serial_number" maxlength="200" placeholder="Если присвоен изготовителем" aria-describedby="ea-error-serial_number"><span id="ea-error-serial_number" class="ea-field-error"></span></div>
+            <div class="ea-field"><label for="ea-new-date">Дата поступления</label><input id="ea-new-date" name="received_date" type="date" aria-describedby="ea-error-received_date"><span id="ea-error-received_date" class="ea-field-error"></span></div>
+            <div class="ea-field"><label for="ea-new-holder">Сейчас числится за</label><input id="ea-new-holder" name="current_holder" maxlength="500" placeholder="Сотрудник или склад" autocomplete="off" aria-describedby="ea-error-current_holder"><span id="ea-error-current_holder" class="ea-field-error"></span></div>
+            <div class="ea-field"><label for="ea-new-cost">Стоимость, руб. — итоговая *</label><input id="ea-new-cost" name="price_rub" inputmode="decimal" maxlength="30" required placeholder="27 600,00" aria-describedby="ea-error-price_rub"><span id="ea-error-price_rub" class="ea-field-error"></span></div>
+            <div class="ea-field"><label for="ea-new-vat-mode">НДС в стоимости *</label><select id="ea-new-vat-mode" name="vat_mode" aria-describedby="ea-error-vat_mode"><option value="included">В том числе НДС</option><option value="none">Без НДС</option></select><span id="ea-error-vat_mode" class="ea-field-error"></span></div>
+            <div class="ea-field" id="ea-new-rate-field"><label for="ea-new-rate">Ставка НДС, % *</label><input id="ea-new-rate" name="vat_rate" inputmode="decimal" maxlength="10" placeholder="Из учётных данных" aria-describedby="ea-error-vat_rate"><span id="ea-error-vat_rate" class="ea-field-error"></span></div>
+            <div class="ea-field" id="ea-new-vat-field"><label for="ea-new-vat">Сумма НДС, руб. *</label><input id="ea-new-vat" name="vat_rub" inputmode="decimal" maxlength="30" placeholder="Из учётных данных" aria-describedby="ea-error-vat_rub"><span id="ea-error-vat_rub" class="ea-field-error"></span></div>
+          </div>
+          <div class="ea-actions"><button type="button" id="ea-cancel-new">Отмена</button><button type="submit" id="ea-save" class="ea-primary">Сохранить в базу</button></div>
+        </fieldset>
+        <div id="ea-form-error" class="ea-error" role="alert" hidden></div>
+        <p id="ea-save-status" class="ea-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <section class="ea-panel" aria-labelledby="ea-document-heading">
+      <div class="ea-head"><h2 id="ea-document-heading">Оборудование в акте</h2><span id="ea-count" class="ea-status" aria-live="polite">Позиций: 0</span></div>
+      <div id="ea-preview-status" class="ea-status" role="status" aria-live="polite"></div>
+      <div id="ea-changes" class="ea-changes" role="status" hidden></div>
+      <div id="ea-document-items"><div class="ea-status">Выберите устройство и нажмите «Добавить в акт».</div></div>
+      <div class="ea-actions"><span class="ea-status">Список акта хранится в этой открытой странице.</span><button id="ea-refresh-act" type="button" hidden>Обновить данные</button></div>
+      <div class="ea-doc-footer"><span>Итоговая стоимость: <span id="ea-total" class="ea-amount">0 руб. 00 коп.</span></span><button id="ea-generate" type="button" class="ea-primary" disabled aria-describedby="ea-word-status">Сформировать Word</button></div>
+      <p id="ea-word-status" class="ea-status ea-template-note" role="status">Для Word заполните номер акта, дату и получателя. Формирование не меняет текущего ответственного.</p>
+    </section>
+    <div id="ea-live-status" class="ea-status" role="status" aria-live="polite"></div>
+  </main>
+</div>
+</body>
+</html>

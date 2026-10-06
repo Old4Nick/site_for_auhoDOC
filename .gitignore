@@ -1,0 +1,22 @@
+# Local configuration, credentials and operational data.
+.env
+.env.*
+!.env.example
+output/
+input/
+data/
+backups/
+!!!sensitive/
+**/!!!sensitive/
+*.docx
+!templates/act/акт_рабочий.docx
+*.doc
+*.xlsx
+*.xls
+*.pdf
+*.dump
+*.backup
+*.log
+*.exe
+*.test
+coverage.out

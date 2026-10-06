@@ -1,0 +1,94 @@
+name: equipment-act
+
+x-app-environment: &app-environment
+  DB_HOST: db
+  DB_PORT: "5432"
+  DB_NAME: ${DB_NAME:-equipment_act}
+  DB_USER: ${DB_USER:-equipment_act}
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+
+services:
+  db:
+    image: postgres:18.6-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-equipment_act}
+      POSTGRES_USER: ${DB_USER:-equipment_act}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: --locale-provider=icu --icu-locale=ru-RU --encoding=UTF8
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+
+  web:
+    build: .
+    image: equipment-act:local
+    restart: unless-stopped
+    environment:
+      <<: *app-environment
+      WEB_ADDR: :8080
+      APP_ORIGIN: http://127.0.0.1:${WEB_PORT:-8080}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "/app/server", "--healthcheck"]
+      interval: 10s
+      timeout: 4s
+      retries: 3
+      start_period: 10s
+
+  migrate:
+    profiles: [tools]
+    build: .
+    image: equipment-act:local
+    entrypoint: ["/app/migrate"]
+    environment: *app-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  importer:
+    profiles: [tools]
+    image: equipment-act:local
+    entrypoint: ["/app/import-assets"]
+    environment: *app-environment
+    volumes:
+      - ./input:/input:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  test:
+    profiles: [test]
+    image: equipment-act-test:local
+    build:
+      context: .
+      target: build
+    command: ["go", "test", "./cmd/...", "./internal/...", "./web/..."]
+    working_dir: /src
+    environment:
+      TEST_DATABASE_URL: postgres://${DB_USER:-equipment_act}:${DB_PASSWORD:?Set DB_PASSWORD in .env}@db:5432/${DB_NAME:-equipment_act}?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

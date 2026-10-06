@@ -1,0 +1,17 @@
+{
+  "number": "ТЕСТ-C-01",
+  "date": "2026-10-05",
+  "recipient": "Иванов Иван Иванович",
+  "items_from_database": [
+    {
+      "equipment_type": "Ноутбук",
+      "model": "Испытательная модель & <Тест>",
+      "inventory_number": "ТЕСТ-ИНВ-001",
+      "serial_number": "СН-2026-001",
+      "price_minor": 2760000,
+      "vat_mode": "included",
+      "vat_rate": "20",
+      "vat_minor": 460000
+    }
+  ]
+}
